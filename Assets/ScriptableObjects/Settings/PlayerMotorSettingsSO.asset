@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be3345ca30fb4b5488b7781658424b3a, type: 3}
+  m_Name: PlayerMotorSettingsSO
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMotorSettingsSO
+  _moveSpeed: 5
+  _mouseLookSensitivity: 0.1
+  _gamepadLookSpeed: 180
+  _jumpForce: 5
+  _maxJumps: 1
+  _jumpResetLayer:
+    serializedVersion: 2
+    m_Bits: 192
