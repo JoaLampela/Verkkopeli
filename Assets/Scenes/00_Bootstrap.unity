@@ -659,6 +659,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92700d5f55208a244b8a90a9b9fb487f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Bootstrap
+  _settingsSO: {fileID: 11400000, guid: 6db67a4ef3b9f9b418c55cce3df1eaaf, type: 2}
   _sceneFlowController: {fileID: 19565992}
   _loadingScreenController: {fileID: 891082357}
   _loginScenePathSO: {fileID: 11400000, guid: efe69b257ff33844fba104ddd32d3411, type: 2}

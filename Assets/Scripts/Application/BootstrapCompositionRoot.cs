@@ -4,6 +4,7 @@ using UnityEngine;
 
 public sealed class BootstrapCompositionRoot : MonoBehaviour
 {
+    [SerializeField] private NetworkSettingsSO _settingsSO;
     [SerializeField] private SceneFlowController _sceneFlowController;
     [SerializeField] private LoadingScreenController _loadingScreenController;
     [SerializeField] private ScenePathSO _loginScenePathSO;
@@ -14,13 +15,19 @@ public sealed class BootstrapCompositionRoot : MonoBehaviour
     {
         if (!HasRequiredReferences()) throw new InvalidOperationException("Missing dependencies!");
 
-        string repoPath = Path.Combine(Application.persistentDataPath, AppConstants.Repository.ProfileDataLocation);
-        string sinkPath = Path.Combine(Application.persistentDataPath, AppConstants.MatchHistory.MatchHistoryLocation);
+        string basePath = Application.persistentDataPath;
+        string sinkPath = Path.Combine(basePath, AppConstants.MatchHistory.DataLocation);
+        string authPath = Path.Combine(basePath, AppConstants.Authentication.DataLocation);
+        NodeClient nodeClient = new(_settingsSO.BaseUrl);
+        IAuthenticationClient authClient = nodeClient;
+        IPlayerProfileClient profileClient = nodeClient;
 
         _app = new GameAppBuilder()
             .Add(new SceneLoader())
-            .Add(new JsonProfileRepository(repoPath))
             .Add(new JsonMatchResultSink(sinkPath))
+            .Add(new JsonAuthenticationSessionStore(authPath))
+            .Add(authClient)
+            .Add(profileClient)
             .Add(new StartupScenes(_loginScenePathSO, _mainMenuScenePathSO))
             .Add(_sceneFlowController)
             .Add(_loadingScreenController)
@@ -36,7 +43,8 @@ public sealed class BootstrapCompositionRoot : MonoBehaviour
 
     private bool HasRequiredReferences()
     {
-        return _sceneFlowController != null
+        return _settingsSO != null
+        && _sceneFlowController != null
         && _loadingScreenController != null
         && _loginScenePathSO != null
         && _mainMenuScenePathSO != null;

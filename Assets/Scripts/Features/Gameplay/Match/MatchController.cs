@@ -19,7 +19,7 @@ public sealed class MatchController : IMatchController
         if (_isCompleted) return false;
 
         _isCompleted = true;
-        MatchCompleted?.Invoke(new MatchResult(_matchId, playerId, DateTime.Now));
+        MatchCompleted?.Invoke(new MatchResult(_matchId, playerId, DateTimeOffset.UtcNow));
         return true;
     }
 }

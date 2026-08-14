@@ -9,6 +9,6 @@ public sealed class LoginCompositionRoot : MonoBehaviour, ILoadedSceneCompositio
     {
         if (_loginController == null) throw new ArgumentNullException(nameof(_loginController));
 
-        _loginController.Bind(dependencies.PlayerProfileService, dependencies.SceneFlowController);
+        _loginController.Bind(dependencies.SceneFlowController, dependencies.AuthenticationService);
     }
 }

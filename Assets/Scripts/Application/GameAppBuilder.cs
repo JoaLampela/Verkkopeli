@@ -6,8 +6,10 @@ public sealed class GameAppBuilder
     private LoadingScreenController _loadingScreenController;
     private StartupScenes _startupScenes;
     private ISceneLoader _sceneLoader;
-    private IPlayerProfileRepository _repository;
     private IMatchResultSink _matchResultSink;
+    private IAuthenticationClient _authenticationClient;
+    private IAuthenticationSessionStore _authSessionStore;
+    private IPlayerProfileClient _profileClient;
     private bool _startupScenesInitialized;
 
     public void RegisterSceneFlowController(SceneFlowController sfc)
@@ -39,13 +41,6 @@ public sealed class GameAppBuilder
         _sceneLoader = sl ?? throw new ArgumentNullException(nameof(sl));
     }
 
-    public void RegisterPlayerProfileRepository(IPlayerProfileRepository repo)
-    {
-        if (_repository != null) throw new InvalidOperationException(nameof(RegisterPlayerProfileRepository));
-
-        _repository = repo ?? throw new ArgumentNullException(nameof(repo));
-    }
-
     public void RegisterMatchResultSink(IMatchResultSink mrs)
     {
         if (_matchResultSink != null) throw new InvalidOperationException(nameof(RegisterMatchResultSink));
@@ -53,26 +48,49 @@ public sealed class GameAppBuilder
         _matchResultSink = mrs ?? throw new ArgumentNullException(nameof(mrs));
     }
 
+    public void RegisterAuthenticationClient(IAuthenticationClient auth)
+    {
+        if (_authenticationClient != null) throw new InvalidOperationException(nameof(RegisterAuthenticationClient));
+
+        _authenticationClient = auth ?? throw new ArgumentNullException(nameof(auth));
+    }
+
+    public void RegisterAuthenticationSessionStore(IAuthenticationSessionStore authSessionStore)
+    {
+        if (_authSessionStore != null) throw new InvalidOperationException(nameof(RegisterAuthenticationSessionStore));
+
+        _authSessionStore = authSessionStore ?? throw new ArgumentNullException(nameof(authSessionStore));
+    }
+
+    public void RegisterPlayerProfileClient(IPlayerProfileClient profileClient)
+    {
+        if (_profileClient != null) throw new InvalidOperationException(nameof(RegisterPlayerProfileClient));
+
+        _profileClient = profileClient ?? throw new ArgumentNullException(nameof(profileClient));
+    }
+
     public GameApp Build()
     {
         if (!HasValidRefs()) throw new InvalidOperationException(nameof(Build));
 
-        PlayerProfileService profileService = new(_repository);
         GameplaySessionService gameplaySessionService = new();
+        PlayerProfileService profileService = new();
+        AuthenticationService authService = new(_authenticationClient, _profileClient, _authSessionStore, profileService);
 
         _sceneFlowController.Bind(_sceneLoader);
-        AppDependencies sceneDeps = new
+        AppDependencies appDeps = new
             (
                 _sceneFlowController,
                 profileService,
                 _matchResultSink,
-                gameplaySessionService
+                gameplaySessionService,
+                authService
             );
-        _sceneFlowController.Initialize(sceneDeps);
+        _sceneFlowController.Initialize(appDeps);
         _loadingScreenController.Initialize();
         _loadingScreenController.Bind(_sceneFlowController);
 
-        return new GameApp(_sceneFlowController, profileService, _startupScenes);
+        return new GameApp(_sceneFlowController, authService, _startupScenes);
     }
 
     private bool HasValidRefs()
@@ -82,7 +100,9 @@ public sealed class GameAppBuilder
             && _startupScenes.LoginSceneSO != null
             && _startupScenes.MainMenuSceneSO != null
             && _sceneLoader != null
-            && _repository != null
-            && _matchResultSink != null;
+            && _matchResultSink != null
+            && _authenticationClient != null
+            && _profileClient != null
+            && _authSessionStore != null;
     }
 }

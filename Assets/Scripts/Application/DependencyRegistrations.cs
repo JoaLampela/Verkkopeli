@@ -24,15 +24,27 @@ public static class DependencyRegistrations
         return builder;
     }
 
-    public static GameAppBuilder Add(this GameAppBuilder builder, IPlayerProfileRepository playerProfileRepository)
-    {
-        builder.RegisterPlayerProfileRepository(playerProfileRepository);
-        return builder;
-    }
-
     public static GameAppBuilder Add(this GameAppBuilder builder, IMatchResultSink matchResultSink)
     {
         builder.RegisterMatchResultSink(matchResultSink);
+        return builder;
+    }
+
+    public static GameAppBuilder Add(this GameAppBuilder builder, IAuthenticationClient authClient)
+    {
+        builder.RegisterAuthenticationClient(authClient);
+        return builder;
+    }
+
+    public static GameAppBuilder Add(this GameAppBuilder builder, IAuthenticationSessionStore authSessionStore)
+    {
+        builder.RegisterAuthenticationSessionStore(authSessionStore);
+        return builder;
+    }
+
+    public static GameAppBuilder Add(this GameAppBuilder builder, IPlayerProfileClient profileClient)
+    {
+        builder.RegisterPlayerProfileClient(profileClient);
         return builder;
     }
 }

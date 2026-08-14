@@ -1,50 +1,50 @@
 using System;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public sealed class LoginController : MonoBehaviour
 {
-    [SerializeField] private ScenePathSO _mainMenuScenePathSO;
-    [SerializeField] private TMP_InputField _displayNameField;
-    [SerializeField] private Color _playerColor = Color.yellow;
-    [SerializeField] private Button _submitButton;
-    private IPlayerProfileService _playerProfileService;
+    [SerializeField] private ScenePathSO _continuationSceneSO;
+    [SerializeField] private TMP_InputField _emailInputField;
+    [SerializeField] private TMP_InputField _passwordInputField;
+    [SerializeField] private TMP_Text _statusText;
     private ISceneFlowController _sceneFlowController;
+    private IAuthenticationService _authenticationService;
 
-    public void Bind(IPlayerProfileService pps, ISceneFlowController sfc)
+    public void Bind(ISceneFlowController sceneFlow, IAuthenticationService authService)
     {
-        _playerProfileService = pps ?? throw new ArgumentNullException(nameof(pps));
-        _sceneFlowController = sfc ?? throw new ArgumentNullException(nameof(sfc));
+        _sceneFlowController = sceneFlow ?? throw new ArgumentNullException(nameof(sceneFlow));
+        _authenticationService = authService ?? throw new ArgumentNullException(nameof(authService));
     }
 
-    public void Submit()
+    public async void Login()
     {
-        SubmitAsync().LogExceptionsAndForget();
-    }
-    
-    private async Awaitable SubmitAsync()
-    {
-        if (_playerProfileService == null
-        || _sceneFlowController == null
-        || _mainMenuScenePathSO == null) throw new ArgumentException(nameof(SubmitAsync));
-
-        _submitButton.interactable = false;
+        if (_continuationSceneSO == null
+        || _emailInputField == null
+        || _passwordInputField == null
+        || _statusText == null) throw new InvalidOperationException(nameof(Login));
 
         try
         {
-            Color32 color = _playerColor;
-            PlayerColor playerColor = new(color.r, color.g, color.b);
-            string displayName = string.IsNullOrWhiteSpace(_displayNameField.text)
-            ? AppConstants.ProfileConfig.DefaultName
-            : _displayNameField.text.Trim();
-
-            await _playerProfileService.CreateProfileAsync(displayName, playerColor, destroyCancellationToken);
-            if (_playerProfileService.HasProfile) _sceneFlowController.ChangePrimaryScene(_mainMenuScenePathSO);
+            _statusText.color = Color.white;
+            _statusText.text = "Logging in...";
+            await _authenticationService.LoginAsync(_emailInputField.text, _passwordInputField.text, destroyCancellationToken);
+            destroyCancellationToken.ThrowIfCancellationRequested();
+            _statusText.color = Color.green;
+            _statusText.text = "Logged in!";
+            _sceneFlowController.ChangePrimaryScene(_continuationSceneSO);
         }
-        finally
+        catch (UnauthorizedAccessException)
         {
-            _submitButton.interactable = true;
+            _statusText.color = Color.red;
+            _statusText.text = "Invalid email or password.";
+        }
+        catch (OperationCanceledException) {}
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+            _statusText.color = Color.red;
+            _statusText.text = "Unable to reach server.";
         }
     }
 }

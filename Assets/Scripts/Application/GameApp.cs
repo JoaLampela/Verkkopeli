@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 public sealed class GameApp
 {
     private readonly ISceneFlowController _sceneFlowController;
-    private readonly IPlayerProfileService _playerProfileService;
+    private readonly IAuthenticationService _authenticationService;
     private readonly StartupScenes _startupScenes;
     private bool _hasStarted;
 
-    public GameApp(ISceneFlowController sfc, IPlayerProfileService pps, StartupScenes scenes)
+    public GameApp(ISceneFlowController sfc, IAuthenticationService auth, StartupScenes scenes)
     {
         _sceneFlowController = sfc ?? throw new ArgumentNullException(nameof(sfc));
-        _playerProfileService = pps ?? throw new ArgumentNullException(nameof(pps));
+        _authenticationService = auth ?? throw new ArgumentNullException(nameof(auth));
         _startupScenes = scenes;
     }
 
@@ -21,13 +21,13 @@ public sealed class GameApp
         if (_hasStarted) return;
 
         _hasStarted = true;
-        await _playerProfileService.InitializeAsync(ct);
+        bool isSessionStored = await _authenticationService.TryRestoreSessionAsync(ct);
         ct.ThrowIfCancellationRequested();
 
-        ScenePathSO scene = _playerProfileService.HasProfile
-        ? _startupScenes.MainMenuSceneSO
-        : _startupScenes.LoginSceneSO;
-        
-        _sceneFlowController.ChangePrimaryScene(scene);
+        ScenePathSO startScene = isSessionStored
+            ? _startupScenes.MainMenuSceneSO
+            : _startupScenes.LoginSceneSO;
+
+        _sceneFlowController.ChangePrimaryScene(startScene);
     }
 }
