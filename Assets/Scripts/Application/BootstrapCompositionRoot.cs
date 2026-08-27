@@ -18,9 +18,11 @@ public sealed class BootstrapCompositionRoot : MonoBehaviour
         string basePath = Application.persistentDataPath;
         string sinkPath = Path.Combine(basePath, AppConstants.MatchHistory.DataLocation);
         string authPath = Path.Combine(basePath, AppConstants.Authentication.DataLocation);
-        NodeClient nodeClient = new(_settingsSO.BaseUrl);
+        NodeClient nodeClient = new(_settingsSO.ApiBaseUrl);
+        NodeMatchConnection nodeMatchConnection = new(_settingsSO.RealtimeUri);
         IAuthenticationClient authClient = nodeClient;
         IPlayerProfileClient profileClient = nodeClient;
+        IMatchClient matchClient = nodeClient;
 
         _app = new GameAppBuilder()
             .Add(new SceneLoader())
@@ -28,6 +30,8 @@ public sealed class BootstrapCompositionRoot : MonoBehaviour
             .Add(new JsonAuthenticationSessionStore(authPath))
             .Add(authClient)
             .Add(profileClient)
+            .Add(matchClient)
+            .Add(nodeMatchConnection)
             .Add(new StartupScenes(_loginScenePathSO, _mainMenuScenePathSO))
             .Add(_sceneFlowController)
             .Add(_loadingScreenController)

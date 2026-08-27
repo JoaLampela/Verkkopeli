@@ -44,6 +44,7 @@ public sealed class GameplayCompositionRoot : MonoBehaviour, ILoadedSceneComposi
             deps.MatchResultSink,
             _playerInputSource,
             deps.SceneFlowController,
+            deps.MatchmakingService,
             _postMatchSceneSO,
             TimeSpan.FromSeconds(5f),
             destroyCancellationToken
@@ -58,7 +59,9 @@ public sealed class GameplayCompositionRoot : MonoBehaviour, ILoadedSceneComposi
         IPlayerLifecycleCoordinator lifecycleCoordinator = new PlayerLifecycleCoordinator(playerSpawner, spawnPointSet);
         IPlayerActor player = lifecycleCoordinator.AddPlayer(profile);
         IPlayerCommandDispatcher playerCmdDispatch = new PlayerCommandDispatcher(playerRegistry);
-        IPlayerCommandSink playerCmdSink = new BoundLocalPlayerCommandSink(player.PlayerId, playerCmdDispatch);
+        IPlayerCommandSink localCmdSink = new BoundLocalPlayerCommandSink(player.PlayerId, playerCmdDispatch);
+        IPlayerCommandSink networkCmdSink = new NetworkPlayerCommandSink(deps.RealtimeMessageSender, destroyCancellationToken);
+        IPlayerCommandSink playerCmdSink = new CompositePlayerCommandSink(localCmdSink, networkCmdSink);
         _playerCmdProd.Bind(_playerInputSource, playerCmdSink);
         _playerInputSource.Enable();
         deps.SceneFlowController.AddScene(_gameplayUISceneSO);

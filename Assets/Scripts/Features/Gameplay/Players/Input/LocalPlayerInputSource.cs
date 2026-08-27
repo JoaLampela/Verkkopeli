@@ -42,15 +42,20 @@ public sealed class LocalPlayerInputSource : MonoBehaviour, IPlayerInputSource
         _isEnabled = false;
     }
 
-    public PlayerInputFrame GetPlayerInputFrame()
+    public bool TryGetPlayerInputFrame(out PlayerInputFrame frame)
     {
-        if (!_isEnabled) return default;
+        if (!_isEnabled)
+        {
+            frame = default;
+            return false;
+        }
 
         Vector2 move = _moveAction.action.ReadValue<Vector2>();
         Vector2 look = GetLookValue();
         bool jump = _jumpAction.action.WasPressedThisFrame();
 
-        return new PlayerInputFrame(move, look, jump);
+        frame = new PlayerInputFrame(move, look, jump);
+        return true;
     }
 
     private Vector2 GetLookValue()

@@ -13,6 +13,7 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
     private readonly ScenePathSO _sceneSO;
     private readonly TimeSpan _returnDelay;
     private readonly CancellationTokenSource _lifetimeCancellation;
+    private readonly IMatchmakingService _matchmakingService;
     private bool _handlingCompletion;
 
     public LocalMatchCompletionCoordinator
@@ -21,6 +22,7 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
             IMatchResultSink matchResultSink,
             IPlayerInputSource playerInputSource,
             ISceneFlowController sceneFlowController,
+            IMatchmakingService matchmakingService,
             ScenePathSO sceneSO,
             TimeSpan returnDelay,
             CancellationToken ct = default
@@ -30,6 +32,7 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
         _matchResultSink = matchResultSink ?? throw new ArgumentNullException(nameof(matchResultSink));
         _playerInputSource = playerInputSource ?? throw new ArgumentNullException(nameof(playerInputSource));
         _sceneFlowController = sceneFlowController ?? throw new ArgumentNullException(nameof(sceneFlowController));
+        _matchmakingService = matchmakingService ?? throw new ArgumentNullException(nameof(matchmakingService));
         _sceneSO = sceneSO != null ? sceneSO : throw new ArgumentNullException(nameof(sceneSO));
         _returnDelay = returnDelay;
         _lifetimeCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -80,6 +83,7 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
         }
 
         _playerInputSource.Disable();
+        await _matchmakingService.DisconnectAsync(ct);
         _sceneFlowController.ChangePrimaryScene(_sceneSO);
     }
 }

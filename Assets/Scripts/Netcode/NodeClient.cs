@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public sealed class NodeClient : IAuthenticationClient, IPlayerProfileClient
+public sealed class NodeClient : IAuthenticationClient, IPlayerProfileClient, IMatchClient
 {
     private string _baseUrl;
 
@@ -68,5 +68,56 @@ public sealed class NodeClient : IAuthenticationClient, IPlayerProfileClient
         }
 
         ct.ThrowIfCancellationRequested();
+    }
+
+    public async Task<MatchInfo> CreateMatchAsync(AccessToken accessToken, CancellationToken ct = default)
+    {
+        using UnityWebRequest request = new(_baseUrl + AppConstants.Api.MatchPath, UnityWebRequest.kHttpVerbPOST);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Authorization", $"Bearer {accessToken.Value}");
+        await SendAsync(request, ct);
+
+        if (request.responseCode == 401)
+            throw new UnauthorizedAccessException("Authentication rejected");
+
+        if (request.result != UnityWebRequest.Result.Success)
+            throw new InvalidOperationException($"Request failed with code {request.responseCode}: {request.downloadHandler.text}");
+        
+        MatchInfo info = JsonUtility.FromJson<MatchResponseDto>(request.downloadHandler.text).FromDto();
+        return info;
+    }
+
+    public async Task<MatchInfo> GetMatchAsync(MatchId matchId, CancellationToken ct = default)
+    {
+        string url = $"{_baseUrl}{AppConstants.Api.MatchPath}/{matchId.Guid}";
+        using UnityWebRequest request = UnityWebRequest.Get(url);
+        await SendAsync(request, ct);
+
+        if (request.responseCode == 401)
+            throw new UnauthorizedAccessException("Authentication rejected");
+
+        if (request.result != UnityWebRequest.Result.Success)
+            throw new InvalidOperationException($"Request failed with code {request.responseCode}: {request.downloadHandler.text}");
+
+        MatchInfo info = JsonUtility.FromJson<MatchResponseDto>(request.downloadHandler.text).FromDto();
+        return info;
+    }
+
+    public async Task<MatchInfo> JoinMatchAsync(MatchId matchId, AccessToken accessToken, CancellationToken ct = default)
+    {
+        string url = $"{_baseUrl}{AppConstants.Api.MatchPath}/{matchId.Guid}/join";
+        using UnityWebRequest request = new(url, UnityWebRequest.kHttpVerbPOST);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Authorization", $"Bearer {accessToken.Value}");
+        await SendAsync(request, ct);
+
+        if (request.responseCode == 401)
+            throw new UnauthorizedAccessException("Authentication rejected");
+
+        if (request.result != UnityWebRequest.Result.Success)
+            throw new InvalidOperationException($"Request failed with code {request.responseCode}: {request.downloadHandler.text}");
+
+        MatchInfo info = JsonUtility.FromJson<MatchResponseDto>(request.downloadHandler.text).FromDto();
+        return info;
     }
 }

@@ -47,4 +47,16 @@ public static class DependencyRegistrations
         builder.RegisterPlayerProfileClient(profileClient);
         return builder;
     }
+
+    public static GameAppBuilder Add(this GameAppBuilder builder, IMatchClient matchClient)
+    {
+        builder.RegisterMatchClient(matchClient);
+        return builder;
+    }
+
+    public static GameAppBuilder Add(this GameAppBuilder builder, IMatchRealtimeConnection matchConnection)
+    {
+        builder.RegisterMatchConnection(matchConnection);
+        return builder;
+    }
 }

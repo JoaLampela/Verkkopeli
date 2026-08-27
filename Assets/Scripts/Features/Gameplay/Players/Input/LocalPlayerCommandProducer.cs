@@ -21,7 +21,9 @@ public sealed class LocalPlayerCommandProducer : MonoBehaviour
     {
         if (!_isReady) return;
 
-        PlayerInputFrame frame = _playerInputSource.GetPlayerInputFrame();
+        if (!_playerInputSource.TryGetPlayerInputFrame(out PlayerInputFrame frame))
+            return;
+
         PlayerCommand cmd = CreateNewCommand(frame);
         _playerCommandSink.Submit(cmd);
     }

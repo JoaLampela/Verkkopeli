@@ -1,4 +1,3 @@
-
 public static class AppConstants
 {
     public static class MatchHistory
@@ -11,10 +10,16 @@ public static class AppConstants
     {
         public const string LoginPath = "/api/auth/login";
         public const string ProfilePath = "/api/profiles/me";
+        public const string MatchPath = "/api/matches";
     }
 
     public static class Authentication
     {
         public const string DataLocation = "auth_data.json";
+    }
+
+    public static class Gameplay
+    {
+        public const string RealtimePath = "/realtime";
     }
 }

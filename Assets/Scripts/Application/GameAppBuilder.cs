@@ -10,6 +10,8 @@ public sealed class GameAppBuilder
     private IAuthenticationClient _authenticationClient;
     private IAuthenticationSessionStore _authSessionStore;
     private IPlayerProfileClient _profileClient;
+    private IMatchClient _matchClient;
+    private IMatchRealtimeConnection _matchConnection;
     private bool _startupScenesInitialized;
 
     public void RegisterSceneFlowController(SceneFlowController sfc)
@@ -69,6 +71,20 @@ public sealed class GameAppBuilder
         _profileClient = profileClient ?? throw new ArgumentNullException(nameof(profileClient));
     }
 
+    public void RegisterMatchClient(IMatchClient matchClient)
+    {
+        if (_matchClient != null) throw new InvalidOperationException(nameof(RegisterMatchClient));
+
+        _matchClient = matchClient ?? throw new ArgumentNullException(nameof(matchClient));
+    }
+
+    public void RegisterMatchConnection(IMatchRealtimeConnection matchConnection)
+    {
+        if (_matchConnection != null) throw new InvalidOperationException(nameof(RegisterMatchConnection));
+
+        _matchConnection = matchConnection ?? throw new ArgumentNullException(nameof(matchConnection));
+    }
+
     public GameApp Build()
     {
         if (!HasValidRefs()) throw new InvalidOperationException(nameof(Build));
@@ -76,6 +92,7 @@ public sealed class GameAppBuilder
         GameplaySessionService gameplaySessionService = new();
         PlayerProfileService profileService = new();
         AuthenticationService authService = new(_authenticationClient, _profileClient, _authSessionStore, profileService);
+        MatchmakingService matchmakingService = new(authService, _matchClient, _matchConnection);
 
         _sceneFlowController.Bind(_sceneLoader);
         AppDependencies appDeps = new
@@ -84,7 +101,9 @@ public sealed class GameAppBuilder
                 profileService,
                 _matchResultSink,
                 gameplaySessionService,
-                authService
+                authService,
+                matchmakingService,
+                _matchConnection
             );
         _sceneFlowController.Initialize(appDeps);
         _loadingScreenController.Initialize();
@@ -103,6 +122,8 @@ public sealed class GameAppBuilder
             && _matchResultSink != null
             && _authenticationClient != null
             && _profileClient != null
-            && _authSessionStore != null;
+            && _authSessionStore != null
+            && _matchClient != null
+            && _matchConnection != null;
     }
 }
