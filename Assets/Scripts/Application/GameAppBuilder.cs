@@ -94,6 +94,7 @@ public sealed class GameAppBuilder
         MatchSessionService matchSessionService = new();
         AuthenticationService authService = new(_authenticationClient, _profileClient, _authSessionStore, profileService);
         MatchmakingService matchmakingService = new(authService, matchSessionService, _matchClient, _matchConnection);
+        AuthenticatedSceneRouter authSceneRouter = new(_sceneFlowController, matchmakingService, _startupScenes);
         _sceneFlowController.Bind(_sceneLoader);
         AppDependencies appDeps = new
             (
@@ -105,12 +106,13 @@ public sealed class GameAppBuilder
                 matchmakingService,
                 _matchConnection,
                 _matchConnection,
-                matchSessionService
+                matchSessionService,
+                authSceneRouter
             );
         _sceneFlowController.Initialize(appDeps);
         _loadingScreenController.Initialize();
         _loadingScreenController.Bind(_sceneFlowController);
-        return new GameApp(_sceneFlowController, authService, matchmakingService, _startupScenes);
+        return new GameApp(_sceneFlowController, authService, matchmakingService, authSceneRouter, _startupScenes);
     }
 
     private bool HasValidRefs()

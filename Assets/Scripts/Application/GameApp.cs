@@ -7,14 +7,16 @@ public sealed class GameApp
     private readonly ISceneFlowController _sceneFlowController;
     private readonly IAuthenticationService _authenticationService;
     private readonly IMatchmakingService _matchmakingService;
+    private readonly IAuthenticatedSceneRouter _authSceneRouter;
     private readonly NavScenes _navScenes;
     private bool _hasStarted;
 
-    public GameApp(ISceneFlowController sfc, IAuthenticationService auth, IMatchmakingService mms, NavScenes scenes)
+    public GameApp(ISceneFlowController sfc, IAuthenticationService auth, IMatchmakingService mms, IAuthenticatedSceneRouter asr, NavScenes scenes)
     {
         _sceneFlowController = sfc ?? throw new ArgumentNullException(nameof(sfc));
         _authenticationService = auth ?? throw new ArgumentNullException(nameof(auth));
         _matchmakingService = mms ?? throw new ArgumentNullException(nameof(mms));
+        _authSceneRouter = asr ?? throw new ArgumentNullException(nameof(asr));
         _navScenes = scenes;
     }
 
@@ -32,21 +34,6 @@ public sealed class GameApp
             return;
         }
 
-        MatchInfo? activeMatch = await _matchmakingService.GetActiveMatchAsync(ct);
-        ct.ThrowIfCancellationRequested();
-
-        if (!activeMatch.HasValue)
-        {
-            _sceneFlowController.ChangePrimaryScene(_navScenes.MainMenuSceneSO);
-            return;
-        }
-
-        ScenePathSO startScene = activeMatch.Value.MatchStatus switch
-        {
-            MatchStatus.Waiting => _navScenes.LobbySceneSO,
-            MatchStatus.Running => _navScenes.GameplaySceneSO,
-            _ => _navScenes.MainMenuSceneSO
-        };
-        _sceneFlowController.ChangePrimaryScene(startScene);
+        await _authSceneRouter.RouteAsync(ct);
     }
 }

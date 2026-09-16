@@ -9,12 +9,14 @@ public sealed class LoginController : MonoBehaviour
     [SerializeField] private TMP_InputField _passwordInputField;
     [SerializeField] private TMP_Text _statusText;
     private ISceneFlowController _sceneFlowController;
-    private IAuthenticationService _authenticationService;
+    private IAuthenticationService _authService;
+    private IAuthenticatedSceneRouter _authSceneRouter;
 
-    public void Bind(ISceneFlowController sceneFlow, IAuthenticationService authService)
+    public void Bind(ISceneFlowController sceneFlow, IAuthenticationService authService, IAuthenticatedSceneRouter authSceneRouter)
     {
         _sceneFlowController = sceneFlow ?? throw new ArgumentNullException(nameof(sceneFlow));
-        _authenticationService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _authSceneRouter = authSceneRouter ?? throw new ArgumentNullException(nameof(authSceneRouter));
     }
 
     public async void Login()
@@ -22,24 +24,25 @@ public sealed class LoginController : MonoBehaviour
         if (_continuationSceneSO == null
         || _emailInputField == null
         || _passwordInputField == null
-        || _statusText == null) throw new InvalidOperationException(nameof(Login));
+        || _statusText == null)
+            throw new InvalidOperationException(nameof(Login));
 
         try
         {
             _statusText.color = Color.white;
             _statusText.text = "Logging in...";
-            await _authenticationService.LoginAsync(_emailInputField.text, _passwordInputField.text, destroyCancellationToken);
+            await _authService.LoginAsync(_emailInputField.text, _passwordInputField.text, destroyCancellationToken);
             destroyCancellationToken.ThrowIfCancellationRequested();
             _statusText.color = Color.green;
             _statusText.text = "Logged in!";
-            _sceneFlowController.ChangePrimaryScene(_continuationSceneSO);
+            await _authSceneRouter.RouteAsync(destroyCancellationToken);
         }
         catch (UnauthorizedAccessException)
         {
             _statusText.color = Color.red;
             _statusText.text = "Invalid email or password.";
         }
-        catch (OperationCanceledException) {}
+        catch (OperationCanceledException) {} // Do nothing if operation is cancelled
         catch (Exception ex)
         {
             Debug.LogException(ex);
