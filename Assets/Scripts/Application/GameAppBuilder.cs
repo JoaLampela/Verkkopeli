@@ -4,7 +4,7 @@ public sealed class GameAppBuilder
 {
     private SceneFlowController _sceneFlowController;
     private LoadingScreenController _loadingScreenController;
-    private StartupScenes _startupScenes;
+    private NavScenes _startupScenes;
     private ISceneLoader _sceneLoader;
     private IMatchResultSink _matchResultSink;
     private IAuthenticationClient _authenticationClient;
@@ -28,7 +28,7 @@ public sealed class GameAppBuilder
         _loadingScreenController = lsc;
     }
 
-    public void RegisterStartupScenes(StartupScenes scenes)
+    public void RegisterStartupScenes(NavScenes scenes)
     {
         if (_startupScenesInitialized) throw new InvalidOperationException(nameof(RegisterStartupScenes));
 
@@ -91,9 +91,9 @@ public sealed class GameAppBuilder
 
         GameplaySessionService gameplaySessionService = new();
         PlayerProfileService profileService = new();
+        MatchSessionService matchSessionService = new();
         AuthenticationService authService = new(_authenticationClient, _profileClient, _authSessionStore, profileService);
-        MatchmakingService matchmakingService = new(authService, _matchClient, _matchConnection);
-
+        MatchmakingService matchmakingService = new(authService, matchSessionService, _matchClient, _matchConnection);
         _sceneFlowController.Bind(_sceneLoader);
         AppDependencies appDeps = new
             (
@@ -103,13 +103,14 @@ public sealed class GameAppBuilder
                 gameplaySessionService,
                 authService,
                 matchmakingService,
-                _matchConnection
+                _matchConnection,
+                _matchConnection,
+                matchSessionService
             );
         _sceneFlowController.Initialize(appDeps);
         _loadingScreenController.Initialize();
         _loadingScreenController.Bind(_sceneFlowController);
-
-        return new GameApp(_sceneFlowController, authService, _startupScenes);
+        return new GameApp(_sceneFlowController, authService, matchmakingService, _startupScenes);
     }
 
     private bool HasValidRefs()

@@ -1,1 +1,1 @@
-public interface IMatchRealtimeConnection : IMatchConnection, IRealtimeMessageSender {}
+public interface IMatchRealtimeConnection : IMatchConnection, IRealtimeMessageSender, IMatchRealtimeEventSource {}

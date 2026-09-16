@@ -12,7 +12,7 @@ public static class DependencyRegistrations
         return builder;
     }
 
-    public static GameAppBuilder Add(this GameAppBuilder builder, StartupScenes startupScenes)
+    public static GameAppBuilder Add(this GameAppBuilder builder, NavScenes startupScenes)
     {
         builder.RegisterStartupScenes(startupScenes);
         return builder;

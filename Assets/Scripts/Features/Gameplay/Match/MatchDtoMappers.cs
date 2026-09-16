@@ -9,15 +9,18 @@ public static class MatchDtoMappers
         if (dto == null)
             throw new ArgumentNullException(nameof(dto));
 
-        if (!Guid.TryParse(dto.matchId, out Guid guid))
+        if (!Guid.TryParse(dto.matchId, out Guid matchGuid))
             throw new FormatException(nameof(dto.matchId));
+
+        if (!Guid.TryParse(dto.hostPlayerId, out Guid hostPlayerGuid))
+            throw new FormatException(nameof(dto.hostPlayerId));
 
         if (!Enum.TryParse(dto.status, ignoreCase: true, out MatchStatus status))
             throw new FormatException(nameof(dto.status));
 
         List<MatchParticipant> participants = dto.participants?.Select(part => part.FromDto()).ToList() ?? new List<MatchParticipant>();
 
-        return new MatchInfo(new MatchId(guid), status, participants);
+        return new MatchInfo(new MatchId(matchGuid), new PlayerId(hostPlayerGuid), status, participants);
     }
 
     public static MatchParticipant FromDto(this MatchParticipantDto dto)

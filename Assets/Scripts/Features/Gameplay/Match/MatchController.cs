@@ -9,9 +9,9 @@ public sealed class MatchController : IMatchController
 
     public MatchController(MatchId matchId)
     {
-        if (matchId.Guid == Guid.Empty) throw new ArgumentException(nameof(matchId));
-
-        _matchId = matchId;
+        _matchId = matchId.Guid != Guid.Empty
+            ? matchId
+            : throw new ArgumentException(nameof(matchId));
     }
 
     public bool TryDeclareWinner(PlayerId playerId)

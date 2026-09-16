@@ -9,10 +9,25 @@ public sealed class SceneNavActions : MonoBehaviour, ISceneNavActions
 {
     [SerializeField] private ScenePathSO _destinationPathSO;
     private ISceneFlowController _sceneFlowController;
+    private IAuthenticationService _authService;
 
-    public void Bind(ISceneFlowController sceneFlowController)
+    public void Bind(ISceneFlowController sceneFlowController, IAuthenticationService authService)
     {
         _sceneFlowController = sceneFlowController ?? throw new ArgumentNullException(nameof(sceneFlowController));
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+    }
+
+    public async void ChangeToSceneAndLogOut()
+    {
+        try
+        {
+            await _authService.LogoutAsync(destroyCancellationToken);
+            _sceneFlowController?.ChangePrimaryScene(_destinationPathSO);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+        }
     }
 
     public void ChangeToScene()

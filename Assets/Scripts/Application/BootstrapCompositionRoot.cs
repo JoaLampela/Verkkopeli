@@ -9,11 +9,14 @@ public sealed class BootstrapCompositionRoot : MonoBehaviour
     [SerializeField] private LoadingScreenController _loadingScreenController;
     [SerializeField] private ScenePathSO _loginScenePathSO;
     [SerializeField] private ScenePathSO _mainMenuScenePathSO;
+    [SerializeField] private ScenePathSO _lobbyScenePathSO;
+    [SerializeField] private ScenePathSO _gameplayScenePathSO;
     private GameApp _app;
 
     private void Awake()
     {
-        if (!HasRequiredReferences()) throw new InvalidOperationException("Missing dependencies!");
+        if (!HasRequiredReferences())
+            throw new InvalidOperationException("Missing dependencies!");
 
         string basePath = Application.persistentDataPath;
         string sinkPath = Path.Combine(basePath, AppConstants.MatchHistory.DataLocation);
@@ -32,7 +35,7 @@ public sealed class BootstrapCompositionRoot : MonoBehaviour
             .Add(profileClient)
             .Add(matchClient)
             .Add(nodeMatchConnection)
-            .Add(new StartupScenes(_loginScenePathSO, _mainMenuScenePathSO))
+            .Add(new NavScenes(_loginScenePathSO, _mainMenuScenePathSO, _lobbyScenePathSO, _gameplayScenePathSO))
             .Add(_sceneFlowController)
             .Add(_loadingScreenController)
             .Build();
@@ -51,6 +54,8 @@ public sealed class BootstrapCompositionRoot : MonoBehaviour
         && _sceneFlowController != null
         && _loadingScreenController != null
         && _loginScenePathSO != null
-        && _mainMenuScenePathSO != null;
+        && _mainMenuScenePathSO != null
+        && _lobbyScenePathSO != null
+        && _gameplayScenePathSO != null;
     }
 }

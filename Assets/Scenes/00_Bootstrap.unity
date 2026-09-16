@@ -664,6 +664,8 @@ MonoBehaviour:
   _loadingScreenController: {fileID: 891082357}
   _loginScenePathSO: {fileID: 11400000, guid: efe69b257ff33844fba104ddd32d3411, type: 2}
   _mainMenuScenePathSO: {fileID: 11400000, guid: 1ab779dcb61823842ba53640cbcb69dd, type: 2}
+  _lobbyScenePathSO: {fileID: 11400000, guid: 04ac21e717b7dd74480c814b6bdfd775, type: 2}
+  _gameplayScenePathSO: {fileID: 11400000, guid: ff9a9b937470fc240bdfe6e4b3588647, type: 2}
 --- !u!1 &1124506045
 GameObject:
   m_ObjectHideFlags: 0

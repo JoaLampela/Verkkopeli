@@ -10,6 +10,8 @@ public readonly struct AppDependencies
     public IAuthenticationService AuthenticationService { get; }
     public IMatchmakingService MatchmakingService { get; }
     public IRealtimeMessageSender RealtimeMessageSender { get; }
+    public IMatchRealtimeEventSource MatchRealtimeEventSource { get; }
+    public IMatchSessionService MatchSessionService { get; }
 
     public AppDependencies
     (
@@ -19,7 +21,9 @@ public readonly struct AppDependencies
         IGameplaySessionService gss,
         IAuthenticationService auth,
         IMatchmakingService mms,
-        IRealtimeMessageSender rtms
+        IRealtimeMessageSender rtms,
+        IMatchRealtimeEventSource mres,
+        IMatchSessionService mss
     )
     {
         SceneFlowController = sfc ?? throw new ArgumentNullException(nameof(sfc));
@@ -29,5 +33,7 @@ public readonly struct AppDependencies
         AuthenticationService = auth ?? throw new ArgumentNullException(nameof(auth));
         MatchmakingService = mms ?? throw new ArgumentNullException(nameof(mms));
         RealtimeMessageSender = rtms ?? throw new ArgumentNullException(nameof(rtms));
+        MatchRealtimeEventSource = mres ?? throw new ArgumentNullException(nameof(mres));
+        MatchSessionService = mss ?? throw new ArgumentNullException(nameof(mss));
     }
 }

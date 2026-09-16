@@ -10,10 +10,12 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
     private readonly IMatchResultSink _matchResultSink;
     private readonly IPlayerInputSource _playerInputSource;
     private readonly ISceneFlowController _sceneFlowController;
+    private readonly IMatchmakingService _matchmakingService;
+    private readonly IPlayerProfileContext _profileContext;
+    private readonly IMatchSession _matchSession;
     private readonly ScenePathSO _sceneSO;
     private readonly TimeSpan _returnDelay;
     private readonly CancellationTokenSource _lifetimeCancellation;
-    private readonly IMatchmakingService _matchmakingService;
     private bool _handlingCompletion;
 
     public LocalMatchCompletionCoordinator
@@ -23,6 +25,8 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
             IPlayerInputSource playerInputSource,
             ISceneFlowController sceneFlowController,
             IMatchmakingService matchmakingService,
+            IPlayerProfileContext profileContext,
+            IMatchSession matchSession,
             ScenePathSO sceneSO,
             TimeSpan returnDelay,
             CancellationToken ct = default
@@ -33,6 +37,8 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
         _playerInputSource = playerInputSource ?? throw new ArgumentNullException(nameof(playerInputSource));
         _sceneFlowController = sceneFlowController ?? throw new ArgumentNullException(nameof(sceneFlowController));
         _matchmakingService = matchmakingService ?? throw new ArgumentNullException(nameof(matchmakingService));
+        _profileContext = profileContext ?? throw new ArgumentNullException(nameof(profileContext));
+        _matchSession = matchSession ?? throw new ArgumentNullException(nameof(matchSession));
         _sceneSO = sceneSO != null ? sceneSO : throw new ArgumentNullException(nameof(sceneSO));
         _returnDelay = returnDelay;
         _lifetimeCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -62,6 +68,12 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
         try
         {
             await _matchResultSink.HandleResultAsync(matchResult, ct);
+
+            if (!_profileContext.TryGetCurrentProfile(out PlayerProfile profile))
+                throw new InvalidOperationException("No local PlayerProfile!");
+            
+            if (profile.PlayerId == matchResult.WinnerId)
+                await _matchmakingService.CompleteMatchAsync(matchResult.MatchId, ct);
         }
         catch (OperationCanceledException)
         {
@@ -84,6 +96,7 @@ public sealed class LocalMatchCompletionCoordinator : IPostMatchFlowSource, IDis
 
         _playerInputSource.Disable();
         await _matchmakingService.DisconnectAsync(ct);
+        _matchSession.ClearCurrentMatch();
         _sceneFlowController.ChangePrimaryScene(_sceneSO);
     }
 }

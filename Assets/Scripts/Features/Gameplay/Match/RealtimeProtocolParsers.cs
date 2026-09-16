@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public static class RealtimeProtocolParser
+public static class RealtimeProtocolParsers
 {
     public static MatchConnectedMessageDto ParseMatchConnected(string json, MatchId expectedMatchId)
     {

@@ -14,12 +14,16 @@ public sealed class GameplayCompositionRoot : MonoBehaviour, ILoadedSceneComposi
     [SerializeField] private ScenePathSO _postMatchSceneSO;
     private IGameplaySessionService _gameplaySessionService;
     private IPostMatchFlowSource _matchCompletionCoordinator;
+    private IDisposable _realtimeCompletionCoordinator;
 
     private void OnDestroy()
     {
         _gameplaySessionService?.ClearCurrentSession();
+        
         if (_matchCompletionCoordinator is IDisposable disposableCoordinator)
             disposableCoordinator?.Dispose();
+
+        _realtimeCompletionCoordinator?.Dispose();
     }
 
     public void Initialize(AppDependencies deps)
@@ -32,12 +36,21 @@ public sealed class GameplayCompositionRoot : MonoBehaviour, ILoadedSceneComposi
         || deps.GameplaySessionService == null)
             throw new ArgumentNullException(nameof(deps));
 
-        if(!deps.PlayerProfileContext.TryGetCurrentProfile(out PlayerProfile profile))
+        if (!deps.MatchSessionService.TryGetCurrentMatch(out MatchInfo matchInfo))
+            throw new InvalidOperationException("No valid match when entering gameplay");
+
+        if (!deps.PlayerProfileContext.TryGetCurrentProfile(out PlayerProfile profile))
             throw new InvalidOperationException(nameof(Initialize));
 
         BindSceneControlActions(deps);
-        MatchId matchId = new(Guid.NewGuid());
-        IMatchController matchController = new MatchController(matchId);
+        IMatchController matchController = new MatchController(matchInfo.MatchId);
+        RealtimeMatchCompletionCoordinator realtimeCompletionCoordinator = new
+        (
+            matchInfo.MatchId,
+            matchController,
+            deps.MatchRealtimeEventSource
+        );
+        _realtimeCompletionCoordinator = realtimeCompletionCoordinator;
         _matchCompletionCoordinator = new LocalMatchCompletionCoordinator
         (
             matchController,
@@ -45,8 +58,10 @@ public sealed class GameplayCompositionRoot : MonoBehaviour, ILoadedSceneComposi
             _playerInputSource,
             deps.SceneFlowController,
             deps.MatchmakingService,
+            deps.PlayerProfileContext,
+            deps.MatchSessionService,
             _postMatchSceneSO,
-            TimeSpan.FromSeconds(5f),
+            TimeSpan.FromSeconds(5d),
             destroyCancellationToken
         );
         LocalGameplaySessionContext gameplaySessionContext = new(matchController, _matchCompletionCoordinator);
@@ -69,10 +84,9 @@ public sealed class GameplayCompositionRoot : MonoBehaviour, ILoadedSceneComposi
 
     private void BindSceneControlActions(AppDependencies deps)
     {
-        if (deps.SceneFlowController == null) throw new ArgumentNullException(nameof(deps));
+        if (deps.SceneFlowController == null)
+            throw new ArgumentNullException(nameof(deps));
 
-        GetComponentsInChildren<ISceneNavActions>(includeInactive: true)
-            .ToList()
-            .ForEach(action => action.Bind(deps.SceneFlowController));
+        GetComponentsInChildren<ISceneNavActions>(includeInactive: true).ToList().ForEach(action => action.Bind(deps.SceneFlowController, deps.AuthenticationService));
     }
 }
