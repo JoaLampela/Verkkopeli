@@ -60,7 +60,7 @@ public sealed class NodeMatchConnection : IMatchRealtimeConnection
             
             socket.Abort();
             socket.Dispose();
-            throw ex;
+            throw;
         }
     }
 
@@ -68,30 +68,37 @@ public sealed class NodeMatchConnection : IMatchRealtimeConnection
     {
         ct.ThrowIfCancellationRequested();
         CancellationTokenSource cts = _connectionLifetimeTokenSource;
+        Task receiveLoopTask = _receiveLoopTask;
         _connectionLifetimeTokenSource = null;
+        _receiveLoopTask = null;
+        cts?.Cancel();
+        ClientWebSocket socket = _socket;
+        _socket = null;
 
         if (_socket == null)
         {
-            cts?.Cancel();
-            _receiveLoopTask = null;
+            if (receiveLoopTask != null)
+                await receiveLoopTask;
+
+            cts?.Dispose();
             return;
         }
 
-        ct.ThrowIfCancellationRequested();
-        ClientWebSocket socket = _socket;
-        _socket = null;
         await _sendGate.WaitAsync(CancellationToken.None);
 
         try
         {
+            if (receiveLoopTask != null)
+                await receiveLoopTask;
+
             if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived)
             {
-                using CancellationTokenSource cancelToken = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                cancelToken.CancelAfter(TimeSpan.FromSeconds(2d));
+                using CancellationTokenSource cancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                cancelTokenSource.CancelAfter(TimeSpan.FromSeconds(2d));
 
                 try
                 {
-                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, statusDescription: "Disconnecting", cancelToken.Token);
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, statusDescription: "Disconnecting", cancelTokenSource.Token);
                 }
                 catch (OperationCanceledException) when (!ct.IsCancellationRequested)
                 {
@@ -103,12 +110,12 @@ public sealed class NodeMatchConnection : IMatchRealtimeConnection
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             Debug.LogException(ex);
+            socket.Abort();
         }
         finally
         {
             socket?.Dispose();
             cts?.Dispose();
-            _receiveLoopTask = null;
             _sendGate.Release();
         }
     }
@@ -252,10 +259,11 @@ public sealed class NodeMatchConnection : IMatchRealtimeConnection
         try
         {
             ct.ThrowIfCancellationRequested();
+            ClientWebSocket socket = _socket;
 
-            if (_socket == null || _socket.State != WebSocketState.Open) return;
+            if (socket == null || socket.State != WebSocketState.Open) return;
 
-            await _socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
+            await socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
         }
         finally
         {
